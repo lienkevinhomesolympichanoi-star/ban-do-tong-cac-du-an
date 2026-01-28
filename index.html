@@ -9,7 +9,7 @@
         #map { width: 100%; height: 100vh; background: #000; }
         body { margin: 0; padding: 0; font-family: Arial, sans-serif; }
         
-        /* Bảng điều khiển Độ mờ - Tăng z-index để luôn nổi lên trên */
+        /* Bảng điều khiển */
         .control-panel { 
             background: white; 
             padding: 10px; 
@@ -20,7 +20,7 @@
             z-index: 2000 !important; 
         }
 
-        /* Nút icon chức năng */
+        /* Nút chức năng */
         .icon-btn { 
             background: white; 
             width: 42px; 
@@ -37,6 +37,7 @@
             align-items: center; 
             justify-content: center; 
             text-decoration: none;
+            -webkit-tap-highlight-color: transparent;
         }
         .btn-full { color: #2e7d32; } 
         .btn-back { color: #d32f2f; font-weight: bold; } 
@@ -58,7 +59,7 @@
         }
         .seo-footer a { color: #0068ff; text-decoration: none; font-weight: bold; }
 
-        /* GPS Dot Animation */
+        /* Chấm GPS */
         .gps-dot { width: 12px; height: 12px; background: #007bff; border: 2px solid white; border-radius: 50%; position: relative; }
         .gps-dot::after { 
             content: ''; width: 100%; height: 100%; border-radius: 50%; 
@@ -95,19 +96,19 @@
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        // 1. Khởi tạo bản đồ
+        // 1. Khởi tạo
         var map = L.map('map', { zoomControl: false, tap: false }).setView([20.995, 105.845], 11);
         L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-        // 2. Lớp nền vệ tinh Google
+        // 2. Nền vệ tinh
         L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
             maxZoom: 22, attribution: '© Google Maps'
         }).addTo(map);
         
-        // 3. Đường dẫn Database GitHub
+        // 3. Database
         var ghPath = "https://raw.githubusercontent.com/lienkevinhomesolympichanoi-star/databasemap-tonghop/main/";
 
-        // 4. Các lớp quy hoạch
+        // 4. Các lớp bản đồ
         var v2 = L.tileLayer(ghPath + 'vins_2/{z}/{x}/{y}.png', { maxZoom: 21, opacity: 0.7 });
         var v3 = L.tileLayer(ghPath + 'vins_3/{z}/{x}/{y}.png', { maxZoom: 21, opacity: 0.7 });
         var vDP = L.tileLayer(ghPath + 'vins_dan_phuong/{z}/{x}/{y}.png', { maxZoom: 21, opacity: 0.7 });
@@ -115,7 +116,7 @@
 
         v2.addTo(map); v3.addTo(map); vDP.addTo(map); alu.addTo(map);
 
-        // 5. Bảng chọn lớp (Top-Right)
+        // 5. Chọn lớp (Top-Right)
         var overlays = {
             "Mặt bằng Vins 2": v2,
             "Mặt bằng Vins 3": v3,
@@ -124,11 +125,11 @@
         };
         L.control.layers(null, overlays, { collapsed: false, position: 'topright' }).addTo(map);
 
-        // 6. Thanh trượt Độ mờ - Đẩy xuống thấp hơn nữa (marginTop: 165px)
+        // 6. Thanh Độ mờ (Dưới cụm nút bên trái)
         var opacityCtrl = L.control({position: 'topleft'});
         opacityCtrl.onAdd = function (map) {
             var div = L.DomUtil.create('div', 'control-panel');
-            div.style.marginTop = "165px"; // Tăng khoảng cách để tránh đè lên nút Zalo/Logo
+            div.style.marginTop = "165px";
             div.innerHTML = '<b>Độ mờ</b><br><input id="range" type="range" min="0" max="1" step="0.1" value="0.7" style="width:100px; cursor:pointer;">';
             L.DomEvent.disableClickPropagation(div);
             return div;
@@ -140,21 +141,37 @@
             [v2, v3, vDP, alu].forEach(function(l) { l.setOpacity(val); });
         });
 
-        // 7. Xử lý GPS
+        // 7. GPS THÔNG MINH (Bỏ chế độ Watch để tránh tự nhảy)
         var markerGPS, isGPSActive = false, gpsText = document.getElementById('gps-text');
+
         function toggleGPS() {
             if (!isGPSActive) { 
-                map.locate({setView: true, maxZoom: 16, enableHighAccuracy: true, watch: true}); 
+                // locate 1 lần duy nhất để đưa vị trí về giữa
+                map.locate({setView: true, maxZoom: 16, enableHighAccuracy: true}); 
+                isGPSActive = true; 
+                gpsText.innerText = "ON"; 
+                gpsText.className = "gps-status status-on";
             } else { 
                 if (markerGPS) map.removeLayer(markerGPS); 
-                isGPSActive = false; gpsText.innerText = "OFF"; gpsText.className = "gps-status status-off";
+                isGPSActive = false; 
+                gpsText.innerText = "OFF"; 
+                gpsText.className = "gps-status status-off";
                 map.stopLocate();
             }
         }
+
         map.on('locationfound', function(e) {
             if (markerGPS) map.removeLayer(markerGPS);
-            markerGPS = L.marker(e.latlng, { icon: L.divIcon({ className: 'gps-dot', iconSize: [12, 12] }) }).addTo(map);
-            isGPSActive = true; gpsText.innerText = "ON"; gpsText.className = "gps-status status-on";
+            markerGPS = L.marker(e.latlng, { 
+                icon: L.divIcon({ className: 'gps-dot', iconSize: [12, 12] }) 
+            }).addTo(map);
+            // Sau khi tìm thấy, không dùng setView nữa để người dùng tự do di chuyển
+        });
+
+        map.on('locationerror', function() { 
+            alert("Không thể xác định vị trí. Vui lòng bật GPS!"); 
+            isGPSActive = false; 
+            gpsText.innerText = "OFF"; 
         });
     </script>
 </body>
