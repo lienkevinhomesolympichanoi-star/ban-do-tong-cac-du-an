@@ -1,71 +1,121 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-    <title>Quy Hoạch Tổng Thể - Siêu Thị Dự Án</title>
+    <title>Quy Hoạch Tổng Thể - Thảo Nguyễn Vinhomes</title>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         #map { width: 100%; height: 100vh; background: #000; }
         body { margin: 0; padding: 0; font-family: Arial, sans-serif; }
-        .control-panel { background: white; padding: 10px; border: 2px solid #ccc; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); min-width: 120px; }
-        .icon-btn { background: white; width: 42px; height: 42px; line-height: 42px; margin-bottom: 8px; border-radius: 8px; border: 2px solid rgba(0,0,0,0.2); cursor: pointer; text-align: center; font-size: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; text-decoration: none; position: relative; }
-        .btn-full { color: #2e7d32; } .btn-back { color: #d32f2f; font-weight: bold; } .btn-contact { color: #0084ff; }
-        .btn-gps { flex-direction: column; line-height: normal; height: auto; padding: 5px 0; }
+        
+        /* Bảng điều khiển Độ mờ - Tăng z-index để luôn nổi lên trên */
+        .control-panel { 
+            background: white; 
+            padding: 10px; 
+            border: 2px solid #ccc; 
+            border-radius: 8px; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3); 
+            min-width: 100px;
+            z-index: 2000 !important; 
+        }
+
+        /* Nút icon chức năng */
+        .icon-btn { 
+            background: white; 
+            width: 42px; 
+            height: 42px; 
+            line-height: 42px; 
+            margin-bottom: 8px; 
+            border-radius: 8px; 
+            border: 2px solid rgba(0,0,0,0.2); 
+            cursor: pointer; 
+            text-align: center; 
+            font-size: 20px; 
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3); 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            text-decoration: none;
+        }
+        .btn-full { color: #2e7d32; } 
+        .btn-back { color: #d32f2f; font-weight: bold; } 
+        .btn-contact { color: #0084ff; }
+
+        /* Nút GPS */
+        .gps-container { position: absolute; top: 180px; right: 10px; z-index: 1000; }
+        .btn-gps { flex-direction: column; line-height: normal; height: auto; padding: 5px 0; min-width: 42px; }
         .gps-status { font-size: 9px; font-weight: bold; margin-top: 2px; text-transform: uppercase; }
         .status-off { color: #999; } .status-on { color: #007bff; }
+
+        /* Logo & Footer */
         .map-logo { position: absolute; bottom: 60px; left: 15px; z-index: 1000; }
         .map-logo img { width: 120px; height: auto; filter: drop-shadow(0 0 5px white); }
-        .seo-footer { position: absolute; bottom: 8px; left: 8px; z-index: 1001; background: rgba(255, 255, 255, 0.9); padding: 5px 10px; border-radius: 4px; font-size: 10px; color: #333; border: 1px solid #ddd; }
+        .seo-footer { 
+            position: absolute; bottom: 8px; left: 8px; z-index: 1001; 
+            background: rgba(255, 255, 255, 0.9); padding: 5px 10px; 
+            border-radius: 4px; font-size: 10px; color: #333; border: 1px solid #ddd; 
+        }
         .seo-footer a { color: #0068ff; text-decoration: none; font-weight: bold; }
+
+        /* GPS Dot Animation */
         .gps-dot { width: 12px; height: 12px; background: #007bff; border: 2px solid white; border-radius: 50%; position: relative; }
-        .gps-dot::after { content: ''; width: 100%; height: 100%; border-radius: 50%; background: #007bff; position: absolute; animation: pulse 2s infinite; }
+        .gps-dot::after { 
+            content: ''; width: 100%; height: 100%; border-radius: 50%; 
+            background: #007bff; position: absolute; animation: pulse 2s infinite; 
+        }
         @keyframes pulse { 0% { transform: scale(1); opacity: 1; } 100% { transform: scale(4); opacity: 0; } }
     </style>
 </head>
 <body>
+
     <div id="map"></div>
+
     <div style="position: absolute; top: 10px; left: 10px; z-index: 1000;">
         <div class="icon-btn btn-full" title="Mở rộng" onclick="window.open(window.location.href, '_blank')">⛶</div>
         <div class="icon-btn btn-back" title="Quay lại" onclick="window.location.href='https://lienkevinhomes.olympichanoi.com';">➦</div>
         <a href="https://zalo.me/0971734339" target="_blank" class="icon-btn btn-contact">💬</a>
     </div>
-    <div style="position: absolute; top: 80px; right: 10px; z-index: 1000;">
+
+    <div class="gps-container">
         <div class="icon-btn btn-gps" id="gps-button" title="Vị trí của tôi" onclick="toggleGPS()">
             <span>📍</span><span id="gps-text" class="gps-status status-off">OFF</span>
         </div>
     </div>
-    <div class="map-logo"><a href="https://zalo.me/0971734339" target="_blank"><img src="logo.png" alt="Logo"></a></div>
-    <div class="seo-footer">Bản đồ quy hoạch bởi <b>Thảo Nguyễn Vinhomes</b>. Website: <a href="https://lienkevinhomes.olympichanoi.com" target="_blank">lienkevinhomes.olympichanoi.com</a></div>
-    
+
+    <div class="map-logo">
+        <a href="https://zalo.me/0971734339" target="_blank">
+            <img src="logo.png" alt="Logo">
+        </a>
+    </div>
+    <div class="seo-footer">
+        Bản đồ quy hoạch bởi <b>Thảo Nguyễn Vinhomes</b>. 
+        Website: <a href="https://lienkevinhomes.olympichanoi.com" target="_blank">lienkevinhomes.olympichanoi.com</a>
+    </div>
+
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        // 1. Khởi tạo bản đồ - Tọa độ trung tâm Hà Nội
+        // 1. Khởi tạo bản đồ
         var map = L.map('map', { zoomControl: false, tap: false }).setView([20.995, 105.845], 11);
         L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-        // 2. Lớp nền vệ tinh Google Maps (Link mt1 ổn định nhất)
-        var googleSat = L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
-            maxZoom: 22,
-            attribution: '© Google Maps'
+        // 2. Lớp nền vệ tinh Google
+        L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+            maxZoom: 22, attribution: '© Google Maps'
         }).addTo(map);
         
-        // 3. Đường dẫn Database GitHub (ĐÃ KIỂM TRA CHÍNH XÁC THEO HÌNH CỦA BẠN)
+        // 3. Đường dẫn Database GitHub
         var ghPath = "https://raw.githubusercontent.com/lienkevinhomesolympichanoi-star/databasemap-tonghop/main/";
 
-        // 4. Khai báo 4 lớp quy hoạch
+        // 4. Các lớp quy hoạch
         var v2 = L.tileLayer(ghPath + 'vins_2/{z}/{x}/{y}.png', { maxZoom: 21, opacity: 0.7 });
         var v3 = L.tileLayer(ghPath + 'vins_3/{z}/{x}/{y}.png', { maxZoom: 21, opacity: 0.7 });
         var vDP = L.tileLayer(ghPath + 'vins_dan_phuong/{z}/{x}/{y}.png', { maxZoom: 21, opacity: 0.7 });
         var alu = L.tileLayer(ghPath + 'alluvia/{z}/{x}/{y}.png', { maxZoom: 21, opacity: 0.7 });
 
-        // Cho hiện sẵn dự án lên bản đồ
-        v2.addTo(map);
-        v3.addTo(map);
-        vDP.addTo(map);
-        alu.addTo(map);
+        v2.addTo(map); v3.addTo(map); vDP.addTo(map); alu.addTo(map);
 
-        // 5. Menu bật tắt dự án
+        // 5. Bảng chọn lớp (Top-Right)
         var overlays = {
             "Mặt bằng Vins 2": v2,
             "Mặt bằng Vins 3": v3,
@@ -74,14 +124,17 @@
         };
         L.control.layers(null, overlays, { collapsed: false, position: 'topright' }).addTo(map);
 
-        // 6. Thanh trượt độ mờ
-        var opacityCtrl = L.control({position: 'topright'});
+        // 6. Thanh trượt Độ mờ - Đẩy xuống thấp hơn nữa (marginTop: 165px)
+        var opacityCtrl = L.control({position: 'topleft'});
         opacityCtrl.onAdd = function (map) {
             var div = L.DomUtil.create('div', 'control-panel');
-            div.innerHTML = '<b>Độ mờ</b><br><input id="range" type="range" min="0" max="1" step="0.1" value="0.7" style="width:100%; cursor:pointer;">';
-            L.DomEvent.disableClickPropagation(div); L.DomEvent.disableScrollPropagation(div); return div;
+            div.style.marginTop = "165px"; // Tăng khoảng cách để tránh đè lên nút Zalo/Logo
+            div.innerHTML = '<b>Độ mờ</b><br><input id="range" type="range" min="0" max="1" step="0.1" value="0.7" style="width:100px; cursor:pointer;">';
+            L.DomEvent.disableClickPropagation(div);
+            return div;
         };
         opacityCtrl.addTo(map);
+
         document.getElementById("range").addEventListener("input", function(e) {
             var val = e.target.value;
             [v2, v3, vDP, alu].forEach(function(l) { l.setOpacity(val); });
