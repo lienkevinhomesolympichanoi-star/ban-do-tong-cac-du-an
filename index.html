@@ -9,7 +9,7 @@
         #map { width: 100%; height: 100vh; background: #000; }
         body { margin: 0; padding: 0; font-family: Arial, sans-serif; }
         .control-panel { background: white; padding: 10px; border: 2px solid #ccc; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); min-width: 120px; }
-        .icon-btn { background: white; width: 42px; height: 42px; line-height: 42px; margin-bottom: 8px; border-radius: 8px; border: 2px solid rgba(0,0,0,0.2); cursor: pointer; text-align: center; font-size: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; text-decoration: none; position: relative; -webkit-tap-highlight-color: transparent; }
+        .icon-btn { background: white; width: 42px; height: 42px; line-height: 42px; margin-bottom: 8px; border-radius: 8px; border: 2px solid rgba(0,0,0,0.2); cursor: pointer; text-align: center; font-size: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; text-decoration: none; position: relative; }
         .btn-full { color: #2e7d32; } .btn-back { color: #d32f2f; font-weight: bold; } .btn-contact { color: #0084ff; }
         .btn-gps { flex-direction: column; line-height: normal; height: auto; padding: 5px 0; }
         .gps-status { font-size: 9px; font-weight: bold; margin-top: 2px; text-transform: uppercase; }
@@ -21,41 +21,36 @@
         .gps-dot { width: 12px; height: 12px; background: #007bff; border: 2px solid white; border-radius: 50%; position: relative; }
         .gps-dot::after { content: ''; width: 100%; height: 100%; border-radius: 50%; background: #007bff; position: absolute; animation: pulse 2s infinite; }
         @keyframes pulse { 0% { transform: scale(1); opacity: 1; } 100% { transform: scale(4); opacity: 0; } }
-        /* Tăng kích thước bảng chọn lớp trên mobile */
-        .leaflet-control-layers-overlays label { margin: 8px 0; cursor: pointer; display: block; }
     </style>
 </head>
 <body>
     <div id="map"></div>
-    
     <div style="position: absolute; top: 10px; left: 10px; z-index: 1000;">
         <div class="icon-btn btn-full" title="Mở rộng" onclick="window.open(window.location.href, '_blank')">⛶</div>
         <div class="icon-btn btn-back" title="Quay lại" onclick="window.location.href='https://lienkevinhomes.olympichanoi.com';">➦</div>
         <a href="https://zalo.me/0971734339" target="_blank" class="icon-btn btn-contact">💬</a>
     </div>
-
     <div style="position: absolute; top: 80px; right: 10px; z-index: 1000;">
         <div class="icon-btn btn-gps" id="gps-button" title="Vị trí của tôi" onclick="toggleGPS()">
             <span>📍</span><span id="gps-text" class="gps-status status-off">OFF</span>
         </div>
     </div>
-
     <div class="map-logo"><a href="https://zalo.me/0971734339" target="_blank"><img src="logo.png" alt="Logo"></a></div>
     <div class="seo-footer">Bản đồ quy hoạch bởi <b>Thảo Nguyễn Vinhomes</b>. Website: <a href="https://lienkevinhomes.olympichanoi.com" target="_blank">lienkevinhomes.olympichanoi.com</a></div>
     
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        // 1. Cấu hình bản đồ
-        var map = L.map('map', { zoomControl: false, tap: false }).setView([21.0285, 105.8542], 12);
+        // 1. Khởi tạo bản đồ - Tọa độ trung tâm Hà Nội
+        var map = L.map('map', { zoomControl: false, tap: false }).setView([20.995, 105.845], 11);
         L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-        // 2. Lớp nền vệ tinh Google
-        L.tileLayer('https://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', { 
-            maxZoom: 22, 
-            subdomains:['mt0','mt1','mt2','mt3'] 
+        // 2. Lớp nền vệ tinh Google Maps (Link mt1 ổn định nhất)
+        var googleSat = L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+            maxZoom: 22,
+            attribution: '© Google Maps'
         }).addTo(map);
         
-        // 3. Đường dẫn Database GitHub
+        // 3. Đường dẫn Database GitHub (ĐÃ KIỂM TRA CHÍNH XÁC THEO HÌNH CỦA BẠN)
         var ghPath = "https://raw.githubusercontent.com/lienkevinhomesolympichanoi-star/databasemap-tonghop/main/";
 
         // 4. Khai báo 4 lớp quy hoạch
@@ -64,13 +59,13 @@
         var vDP = L.tileLayer(ghPath + 'vins_dan_phuong/{z}/{x}/{y}.png', { maxZoom: 21, opacity: 0.7 });
         var alu = L.tileLayer(ghPath + 'alluvia/{z}/{x}/{y}.png', { maxZoom: 21, opacity: 0.7 });
 
-        // Cho hiển thị mặc định (có thể chọn hiện 1 hoặc tất cả)
+        // Cho hiện sẵn dự án lên bản đồ
         v2.addTo(map);
         v3.addTo(map);
         vDP.addTo(map);
         alu.addTo(map);
 
-        // 5. Bảng điều khiển chọn lớp (Overlays)
+        // 5. Menu bật tắt dự án
         var overlays = {
             "Mặt bằng Vins 2": v2,
             "Mặt bằng Vins 3": v3,
@@ -79,7 +74,7 @@
         };
         L.control.layers(null, overlays, { collapsed: false, position: 'topright' }).addTo(map);
 
-        // 6. Thanh trượt chỉnh độ mờ (Sẽ chỉnh cho lớp đang bật hoặc lớp tổng quát)
+        // 6. Thanh trượt độ mờ
         var opacityCtrl = L.control({position: 'topright'});
         opacityCtrl.onAdd = function (map) {
             var div = L.DomUtil.create('div', 'control-panel');
@@ -87,11 +82,27 @@
             L.DomEvent.disableClickPropagation(div); L.DomEvent.disableScrollPropagation(div); return div;
         };
         opacityCtrl.addTo(map);
-
         document.getElementById("range").addEventListener("input", function(e) {
             var val = e.target.value;
-            [v2, v3, vDP, alu].forEach(function(layer) { layer.setOpacity(val); });
+            [v2, v3, vDP, alu].forEach(function(l) { l.setOpacity(val); });
         });
 
-        // 7. Xử lý GPS (Tối ưu cho iPhone)
-        var markerGPS
+        // 7. Xử lý GPS
+        var markerGPS, isGPSActive = false, gpsText = document.getElementById('gps-text');
+        function toggleGPS() {
+            if (!isGPSActive) { 
+                map.locate({setView: true, maxZoom: 16, enableHighAccuracy: true, watch: true}); 
+            } else { 
+                if (markerGPS) map.removeLayer(markerGPS); 
+                isGPSActive = false; gpsText.innerText = "OFF"; gpsText.className = "gps-status status-off";
+                map.stopLocate();
+            }
+        }
+        map.on('locationfound', function(e) {
+            if (markerGPS) map.removeLayer(markerGPS);
+            markerGPS = L.marker(e.latlng, { icon: L.divIcon({ className: 'gps-dot', iconSize: [12, 12] }) }).addTo(map);
+            isGPSActive = true; gpsText.innerText = "ON"; gpsText.className = "gps-status status-on";
+        });
+    </script>
+</body>
+</html>
